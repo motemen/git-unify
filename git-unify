@@ -1,0 +1,216 @@
+#!/bin/sh
+
+set -e
+
+dashless=$(basename "$0" | sed -e 's/-/ /')
+USAGE="init
+   or: $dashless deinit
+   or: $dashless submodule-update <submodule>
+   or: $dashless clone <repo>"
+
+die () {
+    printf >&2 '%s\n' "$*"
+    exit 128
+}
+
+usage () {
+    die "usage: $dashless $USAGE"
+}
+
+log () {
+    echo $@
+}
+
+root=${GIT_UNIFIED_ROOT-$(git config unified.root || true)}
+if [ -z "$root" ]
+then
+    root="$HOME/.shared-git"
+fi
+
+__remote_url_to_dir () {
+    dir=$1
+    dir=${dir#*@}
+    dir=${dir#*://}
+    dir=${dir%.git}
+    dir=${dir/:/\/}
+    dir=${dir/\/\//\/}
+    echo "$root/$dir"
+}
+
+# Unify current non-unified git-dir
+cmd_init () {
+    local_git_dir=$(git rev-parse --git-dir)
+
+    if [ -L "$local_git_dir/config" ]
+    then
+        die "$local_git_dir/config is already a symbolic link to $(readlink $local_git_dir/config) (maybe already unified)"
+    fi
+
+    remote_url=$(git config remote.origin.url || die 'fatal: remote.origin.url not set')
+    shared_git_dir=$(__remote_url_to_dir $remote_url)
+
+    log "Preparing shared git-dir for <$remote_url>..."
+
+    if [ -d "$shared_git_dir" ]
+    then
+        log "Shared git-dir exists. Syncing with it..."
+        git pull --ff-only --no-rebase --no-stat $shared_git_dir 'refs/heads/*:refs/heads/*'
+        git push --all $shared_git_dir
+
+        if [ "$(git reflog | wc -l)" -ge 2 ] && [ "$(git rev-parse HEAD)" != "$(git rev-parse HEAD@{1})" ]
+        then
+            git checkout 'HEAD@{1}'
+        fi
+
+        for x in config refs logs/refs objects info hooks packed-refs remotes rr-cache svn
+        do
+            rm -rf $local_git_dir/$x
+
+            if [ -e "$shared_git_dir/$x" ]
+            then
+                ln -s $shared_git_dir/$x $local_git_dir/$x
+            fi
+        done
+    else
+        mkdir -p "$shared_git_dir"
+
+        log "Moving $local_git_dir to $shared_git_dir..."
+
+        __split_config_entries core.bare core.worktree
+
+        for x in config refs logs/refs objects info hooks packed-refs remotes rr-cache svn
+        do
+            if [ -e "$local_git_dir/$x" ]
+            then
+                case $x in
+                    */*)
+                        mkdir -p "$(dirname "$shared_git_dir/$x")"
+                        ;;
+                esac
+                mv $local_git_dir/$x $shared_git_dir/$x
+                ln -s $shared_git_dir/$x $local_git_dir/$x
+            fi
+        done
+
+        (
+            GIT_DIR=$shared_git_dir git init --bare
+            GIT_DIR=$shared_git_dir __split_config_entries core.bare core.worktree
+        )
+    fi
+}
+
+cmd_submodule_update () {
+    submodule_name=${1%/} # TODO when not specified
+
+    test -n "$submodule_name"
+
+    remote_url=$(git config -f .gitmodules submodule.${submodule_name}.url)
+    shared_git_dir=$(__remote_url_to_dir $remote_url)
+
+    if [ -d "$shared_git_dir" ]
+    then
+        log "Shared git-dir for <$remote_url> exists"
+
+        # First clone using the shared git-dir
+        git submodule update --init --reference $shared_git_dir $submodule_name
+
+        # Then symlink git-dir
+        ( cd $submodule_name && git-unify init )
+    else
+        git submodule update --init $submodule_name
+        ( cd $submodule_name && git-unify init )
+    fi
+}
+
+cmd_clone () {
+    remote_url=$1
+    directory=${2-$(basename ${remote_url%.git})}
+    shared_git_dir=$(__remote_url_to_dir $remote_url)
+
+    if [ -d "$shared_git_dir" ]
+    then
+        log "Found shared git-dir; clone via $shared_git_dir..."
+
+        git clone --reference $shared_git_dir $remote_url $directory
+    else
+        log "Shared git-dir not found"
+
+        git clone $remote_url $directory
+    fi
+
+    ( cd $directory && git-unify init )
+}
+
+cmd_deinit () {
+    local_git_dir=$(git rev-parse --git-dir)
+
+    if [ ! -L "$local_git_dir/config" ]
+    then
+        die "$local_git_dir/config is not a symbolic link; cannot deinit (not unified?)"
+    fi
+
+    remote_url=$(git config remote.origin.url || die 'fatal: remote.origin.url not set')
+    shared_git_dir=$(__remote_url_to_dir $remote_url)
+
+    if [ ! -d "$shared_git_dir" ]
+    then
+        die "$shared_git_dir is not a directory"
+    fi
+
+    log "Reverting symlinks..."
+
+    for x in config refs logs/refs objects info hooks packed-refs remotes rr-cache svn
+    do
+        if [ -L "$local_git_dir/$x" ]
+        then
+            target=$(readlink $local_git_dir/$x)
+            rm -f $local_git_dir/$x
+            cp -r $target $local_git_dir/$x
+        fi
+    done
+}
+
+__split_config_entries () {
+    file=$(git rev-parse --git-dir)/config.local
+    while test $# != 0
+    do
+        local key=$1
+        shift
+
+        # XXX use `-z`?
+        for value in $(git config --local --no-includes $key)
+        do
+            git config --file $file $key $value
+            git config --unset $key
+        done
+    done
+
+    git config --local include.path config.local
+}
+
+while test $# != 0 && test -z "$command"
+do
+    case "$1" in
+        init | deinit | clone | submodule-update )
+            command=$1
+            ;;
+        --)
+            break
+            ;;
+        -*)
+            usage
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
+
+# No command word defaults to "status"
+if test -z "$command"
+then
+    usage
+fi
+
+"cmd_${command//-/_}" "$@"
