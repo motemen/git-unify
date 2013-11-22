@@ -54,7 +54,7 @@ cmd_init () {
     if [ -d "$shared_git_dir" ]
     then
         log "Shared git-dir exists. Syncing with it..."
-        git pull --ff-only --no-rebase --no-stat $shared_git_dir 'refs/heads/*:refs/heads/*'
+        git pull --ff --ff-only --no-rebase --no-stat $shared_git_dir 'refs/heads/*:refs/heads/*'
         git push --all $shared_git_dir
 
         if [ "$(git reflog | wc -l)" -ge 2 ] && [ "$(git rev-parse HEAD)" != "$(git rev-parse HEAD@{1})" ]
