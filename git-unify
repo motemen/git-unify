@@ -115,10 +115,10 @@ cmd_submodule_update () {
         git submodule update --init --reference $shared_git_dir $submodule_name
 
         # Then symlink git-dir
-        ( cd $submodule_name && git-unify init )
+        ( cd $submodule_name && cmd_init )
     else
         git submodule update --init $submodule_name
-        ( cd $submodule_name && git-unify init )
+        ( cd $submodule_name && cmd_init )
     fi
 }
 
@@ -138,7 +138,7 @@ cmd_clone () {
         git clone $remote_url $directory
     fi
 
-    ( cd $directory && git-unify init )
+    ( cd $directory && cmd_init )
 }
 
 cmd_deinit () {
