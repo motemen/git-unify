@@ -8,11 +8,13 @@
 set -e
 
 cd $(dirname $0)/..
-ROOT=$(pwd)
+root=$(pwd)
 
-export GIT_UNIFIED_ROOT=$ROOT/t/.shared-git
+export GIT_UNIFIED_ROOT=$root/t/.shared-git
 rm -rf   $GIT_UNIFIED_ROOT
 mkdir -p $GIT_UNIFIED_ROOT
+
+git_unify=$root/git-unify
 
 rm -rf t/orig
 rm -rf t/repo
@@ -36,7 +38,7 @@ for repo in project-foo project-bar module-a; do
 done
 
 ( cd t/orig/project-foo
-  git submodule add -q $ROOT/t/orig/module-a
+  git submodule add -q $root/t/orig/module-a
   git commit -q -m 'added module-a' )
 
 # done initializing
@@ -45,20 +47,41 @@ mkdir -p t/repo
 
 echo '=== git unify clone (fresh)'
 
-git unify clone $ROOT/t/orig/project-foo t/repo/project-foo
+$git_unify clone $root/t/orig/project-foo t/repo/project-foo
 
 echo '=== git unify clone'
 
-git unify clone $ROOT/t/orig/project-foo t/repo/project-foo-2
+$git_unify clone $root/t/orig/project-foo t/repo/project-foo-2
+
+echo '=== refs shared'
+
+( cd t/repo/project-foo
+  git checkout -b feature-1
+  __git_commit_random
+  git checkout master )
+
+test $( cd t/repo/project-foo && git rev-parse feature-1 ) == $( cd t/repo/project-foo-2 && git rev-parse feature-1 )
 
 echo '=== git unify init (fresh)'
 
-git clone $ROOT/t/orig/project-bar t/repo/project-bar
+git clone $root/t/orig/project-bar t/repo/project-bar
 
-( cd t/repo/project-bar && git unify init )
+( cd t/repo/project-bar
+  $git_unify init )
 
 echo '=== git unify init'
 
-git clone $ROOT/t/orig/project-bar t/repo/project-bar-2
+git clone $root/t/orig/project-bar t/repo/project-bar-2
 
-( cd t/repo/project-bar-2 && git unify init )
+( cd t/repo/project-bar-2
+  $git_unify init )
+
+echo '=== git unify submodule-update (fresh)'
+
+( cd t/repo/project-foo
+  $git_unify submodule-update module-a )
+
+echo '=== git unify submodule-update'
+
+( cd t/repo/project-foo-2
+  $git_unify submodule-update module-a )
