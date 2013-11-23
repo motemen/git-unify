@@ -1,23 +1,17 @@
 #!/bin/sh
 
-# git unify init
-# git unify clone
-# git unify detach
-# git unify submodule-add
-
 set -e
 
-cd $(dirname $0)/..
-root=$(pwd)
+test_description='git-unify tests'
 
-export GIT_UNIFIED_ROOT=$root/t/.shared-git
+t=$(dirname $0)
+export PATH=$(cd $t/..; pwd):$PATH
+
+. $t/sharness/sharness.sh
+
+export GIT_UNIFIED_ROOT=$SHARNESS_TRASH_DIRECTORY/.shared-git
 rm -rf   $GIT_UNIFIED_ROOT
 mkdir -p $GIT_UNIFIED_ROOT
-
-git_unify=$root/git-unify
-
-rm -rf t/orig
-rm -rf t/repo
 
 counter=1
 
@@ -29,59 +23,60 @@ __git_commit_random () {
 }
 
 for repo in project-foo project-bar module-a; do
-    mkdir -p t/orig/$repo
+    mkdir -p orig/$repo
 
-    ( cd t/orig/$repo
+    ( cd orig/$repo
       git init -q
-      __git_commit_random
       __git_commit_random )
 done
 
-( cd t/orig/project-foo
-  git submodule add -q $root/t/orig/module-a
+( cd orig/project-foo
+  git submodule add -q ../module-a
   git commit -q -m 'added module-a' )
 
 # done initializing
 
-mkdir -p t/repo
+test_expect_success 'git-unify clone - fresh' \
+    "git unify clone orig/project-foo repo/project-foo"
 
-echo '=== git unify clone (fresh)'
+test_expect_success 'git-unify clone - already unified' \
+    "git unify clone orig/project-foo repo/project-foo-2"
 
-$git_unify clone $root/t/orig/project-foo t/repo/project-foo
+test_expect_success 'add some branch' \
+    '( cd repo/project-foo &&
+       git checkout -b feature-1 &&
+       __git_commit_random &&
+       git checkout master )'
 
-echo '=== git unify clone'
+test_expect_success 'another worktree has the same branch' \
+    '( cd repo/project-foo && git rev-parse feature-1 ) >expected &&
+     ( cd repo/project-foo-2 && git rev-parse feature-1 ) >actual &&
+     test_cmp expected actual'
 
-$git_unify clone $root/t/orig/project-foo t/repo/project-foo-2
+test_expect_success 'git clone' \
+    "git clone orig/project-bar repo/project-bar &&
+     git clone orig/project-bar repo/project-bar-2"
 
-echo '=== refs shared'
+test_expect_success 'git unify init (fresh)' \
+    "( cd repo/project-bar &&
+       git unify init )"
 
-( cd t/repo/project-foo
-  git checkout -b feature-1
-  __git_commit_random
-  git checkout master )
+test_expect_success 'git unify init' \
+    "( cd repo/project-bar-2 &&
+       git unify init )"
 
-test $( cd t/repo/project-foo && git rev-parse feature-1 ) == $( cd t/repo/project-foo-2 && git rev-parse feature-1 )
+test_expect_success 'git unify init again fails' \
+    "( cd repo/project-bar-2 &&
+       test_must_fail git unify init )"
 
-echo '=== git unify init (fresh)'
+test_expect_success 'git unify submodule-update (fresh)' \
+    "( cd repo/project-foo
+       git unify submodule-update module-a )"
 
-git clone $root/t/orig/project-bar t/repo/project-bar
+test_expect_success 'git unify submodule-update' \
+    "( cd repo/project-foo-2
+       git unify submodule-update module-a )"
 
-( cd t/repo/project-bar
-  $git_unify init )
+export SHARNESS_TEST_FILE=${SHARNESS_TEST_FILE#*/}
 
-echo '=== git unify init'
-
-git clone $root/t/orig/project-bar t/repo/project-bar-2
-
-( cd t/repo/project-bar-2
-  $git_unify init )
-
-echo '=== git unify submodule-update (fresh)'
-
-( cd t/repo/project-foo
-  $git_unify submodule-update module-a )
-
-echo '=== git unify submodule-update'
-
-( cd t/repo/project-foo-2
-  $git_unify submodule-update module-a )
+test_done
