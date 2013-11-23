@@ -5,7 +5,7 @@ set -e
 dashless=$(basename "$0" | sed -e 's/-/ /')
 USAGE="init
    or: $dashless deinit
-   or: $dashless submodule-update <submodule>
+   or: $dashless submodule <submodule>
    or: $dashless clone <repo>"
 
 die () {
@@ -99,12 +99,12 @@ cmd_init () {
     fi
 }
 
-cmd_submodule_update () {
+cmd_submodule () {
     submodule_name=${1%/} # TODO when not specified
 
     test -n "$submodule_name"
 
-    remote_url=$(git config -f .gitmodules submodule.${submodule_name}.url)
+    remote_url=$(git config -f .gitmodules "submodule.${submodule_name}.url")
     shared_git_dir=$(__remote_url_to_dir "$remote_url")
 
     if [ -d "$shared_git_dir" ]
@@ -113,8 +113,6 @@ cmd_submodule_update () {
 
         # First clone using the shared git-dir
         git submodule update --init --reference "$shared_git_dir" "$submodule_name"
-
-        echo $submodule_name
 
         # Then symlink git-dir
         ( cd "$submodule_name" && cmd_init )
@@ -193,7 +191,7 @@ __split_config_entries () {
 while test $# != 0 && test -z "$command"
 do
     case "$1" in
-        init | deinit | clone | submodule-update )
+        init | deinit | clone | submodule )
             command=$1
             ;;
         --)

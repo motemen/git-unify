@@ -69,13 +69,13 @@ test_expect_success 'git unify init again fails' \
     "( cd repo/project-bar-2 &&
        test_must_fail git unify init )"
 
-test_expect_success 'git unify submodule-update (fresh)' \
+test_expect_success 'git unify submodule (fresh)' \
     "( cd repo/project-foo
-       git unify submodule-update module-a )"
+       git unify submodule module-a )"
 
-test_expect_success 'git unify submodule-update' \
+test_expect_success 'git unify submodule' \
     "( cd repo/project-foo-2
-       git unify submodule-update module-a )"
+       git unify submodule module-a )"
 
 export SHARNESS_TEST_FILE=${SHARNESS_TEST_FILE#*/}
 
