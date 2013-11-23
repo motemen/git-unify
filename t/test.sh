@@ -9,9 +9,9 @@ export PATH=$(cd $t/..; pwd):$PATH
 
 . $t/sharness/sharness.sh
 
-export GIT_UNIFIED_ROOT=$SHARNESS_TRASH_DIRECTORY/.shared-git
-rm -rf   $GIT_UNIFIED_ROOT
-mkdir -p $GIT_UNIFIED_ROOT
+export GIT_UNIFIED_ROOT="$SHARNESS_TRASH_DIRECTORY/.shared-git"
+rm -rf   "$GIT_UNIFIED_ROOT"
+mkdir -p "$GIT_UNIFIED_ROOT"
 
 counter=1
 
@@ -36,47 +36,58 @@ done
 
 # done initializing
 
-test_expect_success 'git-unify clone - fresh' \
-    "git unify clone orig/project-foo repo/project-foo"
+test_expect_success 'git-unify clone - fresh' '
+    git unify clone orig/project-foo repo/project-foo
+'
 
-test_expect_success 'git-unify clone - already unified' \
-    "git unify clone orig/project-foo repo/project-foo-2"
+test_expect_success 'git-unify clone - already unified' '
+    git unify clone orig/project-foo repo/project-foo-2
+'
 
-test_expect_success 'add some branch' \
-    '( cd repo/project-foo &&
-       git checkout -b feature-1 &&
-       __git_commit_random &&
-       git checkout master )'
+test_expect_success 'add some branch' '
+    ( cd repo/project-foo &&
+      git checkout -b feature-1 &&
+      __git_commit_random &&
+      git checkout master )
+'
 
-test_expect_success 'another worktree has the same branch' \
-    '( cd repo/project-foo && git rev-parse feature-1 ) >expected &&
-     ( cd repo/project-foo-2 && git rev-parse feature-1 ) >actual &&
-     test_cmp expected actual'
+test_expect_success 'another worktree has the same branch' '
+    ( cd repo/project-foo && git rev-parse feature-1 ) >expected &&
+    ( cd repo/project-foo-2 && git rev-parse feature-1 ) >actual &&
+    test_cmp expected actual
+'
 
-test_expect_success 'git clone' \
-    "git clone orig/project-bar repo/project-bar &&
-     git clone orig/project-bar repo/project-bar-2"
+test_expect_success 'git clone' '
+    git clone orig/project-bar repo/project-bar &&
+    git clone orig/project-bar repo/project-bar-2
+'
 
-test_expect_success 'git unify init (fresh)' \
-    "( cd repo/project-bar &&
-       git unify init )"
+test_expect_success 'git unify init - fresh' '
+    ( cd repo/project-bar &&
+      git unify init )
+'
 
-test_expect_success 'git unify init' \
-    "( cd repo/project-bar-2 &&
-       git unify init )"
+test_expect_success 'git unify init' '
+    ( cd repo/project-bar-2 &&
+      git unify init )
+'
 
-test_expect_success 'git unify init again fails' \
-    "( cd repo/project-bar-2 &&
-       test_must_fail git unify init )"
+test_expect_success 'git unify init again fails' '
+    ( cd repo/project-bar-2 &&
+      test_must_fail git unify init )
+'
 
-test_expect_success 'git unify submodule (fresh)' \
-    "( cd repo/project-foo
-       git unify submodule module-a )"
+test_expect_success 'git unify submodule - fresh' '
+    ( cd repo/project-foo
+      git unify submodule module-a )
+'
 
-test_expect_success 'git unify submodule' \
-    "( cd repo/project-foo-2
-       git unify submodule module-a )"
+test_expect_success 'git unify submodule' '
+    ( cd repo/project-foo-2
+      git unify submodule module-a )
+'
 
+# enabling `t/setup.sh`
 export SHARNESS_TEST_FILE=${SHARNESS_TEST_FILE#*/}
 
 test_done
