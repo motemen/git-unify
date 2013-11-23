@@ -43,19 +43,19 @@ cmd_init () {
 
     if [ -L "$local_git_dir/config" ]
     then
-        die "$local_git_dir/config is already a symbolic link to $(readlink $local_git_dir/config) (maybe already unified)"
+        die "$local_git_dir/config is already a symbolic link to $(readlink "$local_git_dir/config") (maybe already unified)"
     fi
 
     remote_url=$(git config remote.origin.url || die 'fatal: remote.origin.url not set')
-    shared_git_dir=$(__remote_url_to_dir $remote_url)
+    shared_git_dir=$(__remote_url_to_dir "$remote_url")
 
     log "Preparing shared git-dir for <$remote_url>..."
 
     if [ -d "$shared_git_dir" ]
     then
         log "Shared git-dir exists. Syncing with it..."
-        git pull --ff --ff-only --no-rebase --no-stat $shared_git_dir 'refs/heads/*:refs/heads/*'
-        git push --all $shared_git_dir
+        git pull --ff --ff-only --no-rebase --no-stat "$shared_git_dir" 'refs/heads/*:refs/heads/*'
+        git push --all "$shared_git_dir"
 
         if [ "$(git reflog | wc -l)" -ge 2 ] && [ "$(git rev-parse HEAD)" != "$(git rev-parse HEAD@{1})" ]
         then
@@ -64,11 +64,11 @@ cmd_init () {
 
         for x in config refs logs/refs objects info hooks packed-refs remotes rr-cache svn
         do
-            rm -rf $local_git_dir/$x
+            rm -rf "$local_git_dir/$x"
 
             if [ -e "$shared_git_dir/$x" ]
             then
-                ln -s $shared_git_dir/$x $local_git_dir/$x
+                ln -s "$shared_git_dir/$x" "$local_git_dir/$x"
             fi
         done
     else
@@ -87,14 +87,14 @@ cmd_init () {
                         mkdir -p "$(dirname "$shared_git_dir/$x")"
                         ;;
                 esac
-                mv $local_git_dir/$x $shared_git_dir/$x
-                ln -s $shared_git_dir/$x $local_git_dir/$x
+                mv "$local_git_dir/$x" "$shared_git_dir/$x"
+                ln -s "$shared_git_dir/$x" "$local_git_dir/$x"
             fi
         done
 
         (
-            GIT_DIR=$shared_git_dir git init --bare
-            GIT_DIR=$shared_git_dir __split_config_entries core.bare core.worktree
+            GIT_DIR="$shared_git_dir" git init --bare
+            GIT_DIR="$shared_git_dir" __split_config_entries core.bare core.worktree
         )
     fi
 }
@@ -105,20 +105,22 @@ cmd_submodule_update () {
     test -n "$submodule_name"
 
     remote_url=$(git config -f .gitmodules submodule.${submodule_name}.url)
-    shared_git_dir=$(__remote_url_to_dir $remote_url)
+    shared_git_dir=$(__remote_url_to_dir "$remote_url")
 
     if [ -d "$shared_git_dir" ]
     then
         log "Shared git-dir for <$remote_url> exists"
 
         # First clone using the shared git-dir
-        git submodule update --init --reference $shared_git_dir $submodule_name
+        git submodule update --init --reference "$shared_git_dir" "$submodule_name"
+
+        echo $submodule_name
 
         # Then symlink git-dir
-        ( cd $submodule_name && cmd_init )
+        ( cd "$submodule_name" && cmd_init )
     else
-        git submodule update --init $submodule_name
-        ( cd $submodule_name && cmd_init )
+        git submodule update --init "$submodule_name"
+        ( cd "$submodule_name" && cmd_init )
     fi
 }
 
@@ -180,7 +182,7 @@ __split_config_entries () {
         # XXX use `-z`?
         for value in $(git config --local --no-includes $key)
         do
-            git config --file $file $key $value
+            git config --file "$file" $key $value
             git config --unset $key
         done
     done
