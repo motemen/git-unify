@@ -22,7 +22,7 @@ __git_commit_random () {
     counter=$(( $counter + 1 ))
 }
 
-for repo in project-foo project-bar module-a; do
+for repo in project-foo project-bar module-a module-b; do
     mkdir -p orig/$repo
 
     ( cd orig/$repo
@@ -104,6 +104,16 @@ test_expect_success 'git unify submodule - fresh' '
 test_expect_success 'git unify submodule' '
     ( cd repo/project-foo-2
       git unify submodule module-a )
+'
+
+test_expect_success 'git unify submodule-add - fresh' '
+    ( cd repo/project-foo
+      git unify submodule-add ../../orig/module-b)
+'
+
+test_expect_success 'git unify submodule-add' '
+    ( cd repo/project-bar
+      git unify submodule-add ../../orig/module-b)
 '
 
 # enabling `t/setup.sh`

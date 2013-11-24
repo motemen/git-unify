@@ -99,6 +99,24 @@ cmd_init () {
     fi
 }
 
+cmd_submodule_add () {
+    remote_url=$1
+    submodule_name=${2-$(basename ${remote_url%.git})}
+
+    shared_git_dir=$(__remote_url_to_dir "$remote_url")
+
+    if [ -d "$shared_git_dir" ]
+    then
+        log "Shared git-dir for <$remote_url> exists"
+
+        git submodule add --reference "$shared_git_dir" "$remote_url" "$submodule_name"
+    else
+        git submodule add "$remote_url" "$submodule_name"
+    fi
+
+    ( cd "$submodule_name" && cmd_init )
+}
+
 cmd_submodule () {
     submodule_name=${1%/} # TODO when not specified
 
@@ -113,13 +131,11 @@ cmd_submodule () {
 
         # First clone using the shared git-dir
         git submodule update --init --reference "$shared_git_dir" "$submodule_name"
-
-        # Then symlink git-dir
-        ( cd "$submodule_name" && cmd_init )
     else
         git submodule update --init "$submodule_name"
-        ( cd "$submodule_name" && cmd_init )
     fi
+
+    ( cd "$submodule_name" && cmd_init )
 }
 
 cmd_clone () {
@@ -191,7 +207,7 @@ __split_config_entries () {
 while test $# != 0 && test -z "$command"
 do
     case "$1" in
-        init | deinit | clone | submodule )
+        init | deinit | clone | submodule | submodule-add )
             command=$1
             ;;
         --)
