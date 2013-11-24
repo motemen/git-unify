@@ -72,6 +72,25 @@ test_expect_success 'git unify init' '
       git unify init )
 '
 
+test_expect_success 'git unify init - updating branch' '
+    ( cd repo/project-bar   && git checkout -b branch-2 && __git_commit_random && git push origin branch-2 ) &&
+    ( git clone orig/project-bar repo/project-bar-3 ) &&
+    ( cd repo/project-bar   && __git_commit_random && git push origin branch-2 && git checkout master ) &&
+    ( cd repo/project-bar-3 && git checkout    branch-2 && __git_commit_random && git checkout master && git unify init )
+'
+
+test_expect_success 'git unify init - updating branch - branches synced' '
+    ( cd repo/project-bar-3 && git rev-parse branch-2 ) >expected &&
+    ( cd repo/project-bar   && git rev-parse branch-2 ) >actual &&
+    test_cmp expected actual
+'
+
+test_expect_success 'git unify init - updating branch - branches synced' '
+    ( cd repo/project-bar-3 && git rev-parse branch-2 ) >expected &&
+    ( cd repo/project-bar   && git rev-parse branch-2 ) >actual &&
+    test_cmp expected actual
+'
+
 test_expect_success 'git unify init again fails' '
     ( cd repo/project-bar-2 &&
       test_must_fail git unify init )
