@@ -5,7 +5,8 @@ set -e
 dashless=$(basename "$0" | sed -e 's/-/ /')
 USAGE="init
    or: $dashless deinit
-   or: $dashless submodule <submodule>
+   or: $dashless submodule-update <submodule>
+   or: $dashless submodule-add <repo>
    or: $dashless clone <repo>"
 
 die () {
@@ -117,7 +118,7 @@ cmd_submodule_add () {
     ( cd "$submodule_name" && cmd_init )
 }
 
-cmd_submodule () {
+cmd_submodule_update () {
     submodule_name=${1%/} # TODO when not specified
 
     test -n "$submodule_name"
@@ -207,7 +208,7 @@ __split_config_entries () {
 while test $# != 0 && test -z "$command"
 do
     case "$1" in
-        init | deinit | clone | submodule | submodule-add )
+        init | deinit | clone | submodule-update | submodule-add )
             command=$1
             ;;
         --)

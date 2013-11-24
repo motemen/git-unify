@@ -96,14 +96,14 @@ test_expect_success 'git unify init again fails' '
       test_must_fail git unify init )
 '
 
-test_expect_success 'git unify submodule - fresh' '
+test_expect_success 'git unify submodule-update - fresh' '
     ( cd repo/project-foo
-      git unify submodule module-a )
+      git unify submodule-update module-a )
 '
 
-test_expect_success 'git unify submodule' '
+test_expect_success 'git unify submodule-update' '
     ( cd repo/project-foo-2
-      git unify submodule module-a )
+      git unify submodule-update module-a )
 '
 
 test_expect_success 'git unify submodule-add - fresh' '
