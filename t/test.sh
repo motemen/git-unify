@@ -16,11 +16,11 @@ mkdir -p "$GIT_UNIFIED_ROOT"
 counter_file="$SHARNESS_TRASH_DIRECTORY/counter"
 echo 1 > "$counter_file"
 
-__git_commit_random () {
+__git_commit () {
     counter=$(cat "$counter_file")
     echo file $counter >> "FILE_$counter"
     git add FILE_$counter
-    git commit -m "commit #$counter"
+    git commit -m "commit #$counter at $(basename "$(pwd)")"
     echo $(( $counter + 1 )) > "$counter_file"
 }
 
@@ -31,13 +31,19 @@ for repo in project-foo project-bar module-a module-b; do
     mkdir -p orig/$repo
 
     ( cd orig/$repo
-      git init -q
-      __git_commit_random ) >&3 2>&4
+      git init --bare
+    ) >&3 2>&4
+
+    ( git clone orig/$repo tmp/$repo
+      cd tmp/$repo
+      __git_commit
+      git push origin master ) >&3 2>&4
 done
 
-( cd orig/project-foo
-  git submodule add -q ../module-a
-  git commit -q -m 'added module-a' ) >&3 2>&4
+( cd tmp/project-foo
+  git submodule add ../../orig/module-a
+  git commit -m 'added module-a'
+  git push origin master ) >&3 2>&4
 
 # done initializing
 
@@ -52,7 +58,7 @@ test_expect_success 'git-unify clone - already unified' '
 test_expect_success 'add some branch' '
     ( cd repo/project-foo &&
       git checkout -b feature-1 &&
-      __git_commit_random &&
+      __git_commit &&
       git checkout master )
 '
 
