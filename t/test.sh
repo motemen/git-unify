@@ -9,9 +9,9 @@ export PATH=$(cd $t/..; pwd):$PATH
 
 . $t/sharness/sharness.sh
 
-export GIT_UNIFIED_ROOT="$SHARNESS_TRASH_DIRECTORY/.shared-git"
-rm -rf   "$GIT_UNIFIED_ROOT"
-mkdir -p "$GIT_UNIFIED_ROOT"
+export GIT_UNIFY_ROOT="$SHARNESS_TRASH_DIRECTORY/.shared-git"
+rm -rf   "$GIT_UNIFY_ROOT"
+mkdir -p "$GIT_UNIFY_ROOT"
 
 counter_file="$SHARNESS_TRASH_DIRECTORY/counter"
 echo 1 > "$counter_file"

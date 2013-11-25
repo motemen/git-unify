@@ -22,7 +22,7 @@ log () {
     echo $@
 }
 
-root=${GIT_UNIFIED_ROOT-$(git config unified.root || true)}
+root=${GIT_UNIFY_ROOT-$(git config unify.root || true)}
 if [ -z "$root" ]
 then
     root="$HOME/.shared-git"
