@@ -35,6 +35,7 @@ __remote_url_to_dir () {
     dir=${dir%.git}
     dir=${dir/:/\/}
     dir=${dir/\/\//\/}
+    dir=${dir#/}
     echo "$root/$dir"
 }
 
