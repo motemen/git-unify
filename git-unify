@@ -55,14 +55,25 @@ cmd_init () {
 
     if [ -d "$shared_git_dir" ]
     then
-        log "Shared git-dir exists. Syncing with it..."
-        git pull --ff --ff-only --no-rebase --no-stat "$shared_git_dir" 'refs/heads/*:refs/heads/*'
-        git push --all "$shared_git_dir"
+        log "Shared git-dir exists. Comparing heads..."
 
-        if [ "$(git reflog | wc -l)" -ge 2 ] && [ "$(git rev-parse HEAD)" != "$(git rev-parse HEAD@{1})" ]
+        # Syncing two repositories automatically is a hard job, so we don't try on it
+        heads_shared="${TMPDIR-/tmp}/git-unify.$$.heads-shared"
+        heads_local="${TMPDIR-/tmp}/git-unify.$$.heads-local"
+
+        if ! ( git ls-remote --heads "$shared_git_dir" >"$heads_shared";
+               git ls-remote --heads . >"$heads_local";
+               diff -u "$heads_shared" "$heads_local" )
         then
-            git checkout 'HEAD@{1}'
+            rm $heads_shared $heads_local
+            die 'fatal: Heads are not synced. Please sync manually branches and try again.
+	Typically running `git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/*`
+	and pull/pushing conflicting branch will fix.'
         fi
+
+        rm $heads_shared $heads_local
+
+        log "Removing files under $local_git_dir and replacing with symlinks to $shared_git_dir..."
 
         for x in config refs logs/refs objects info hooks packed-refs remotes rr-cache svn
         do
