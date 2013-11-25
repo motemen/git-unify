@@ -199,6 +199,11 @@ cmd_deinit () {
     done
 }
 
+cmd_shared_dir () {
+    remote_url=$(git config remote.origin.url || die 'fatal: remote.origin.url not set')
+    echo $(__remote_url_to_dir "$remote_url")
+}
+
 __split_config_entries () {
     file=$(git rev-parse --git-dir)/config.local
     while test $# != 0
@@ -220,7 +225,7 @@ __split_config_entries () {
 while test $# != 0 && test -z "$command"
 do
     case "$1" in
-        init | deinit | clone | submodule-update | submodule-add )
+        init | deinit | clone | submodule-update | submodule-add | shared-dir )
             command=$1
             ;;
         --)
