@@ -83,65 +83,74 @@ test_expect_success 'git unify init' '
       git unify init )
 '
 
-### TODO
-# test_expect_success 'git unify init - updating branch' '
-#     ( cd repo/project-bar   && git checkout -b branch-2 && __git_commit_random && git push origin branch-2 ) &&
-#     ( git clone orig/project-bar repo/project-bar-3 ) &&
-#     ( cd repo/project-bar   && __git_commit_random && git push origin branch-2 && git checkout master ) &&
-#     ( cd repo/project-bar-3 && git checkout    branch-2 && __git_commit_random && git checkout master && git unify init )
-# '
-# 
-# test_expect_success 'git unify init - updating branch - branches synced' '
-#     ( cd repo/project-bar-3 && git rev-parse branch-2 ) >expected &&
-#     ( cd repo/project-bar   && git rev-parse branch-2 ) >actual &&
-#     test_cmp expected actual
-# '
-# 
-# test_expect_success 'git unify init - updating branch - branches synced' '
-#     ( cd repo/project-bar-3 && git rev-parse branch-2 ) >expected &&
-#     ( cd repo/project-bar   && git rev-parse branch-2 ) >actual &&
-#     test_cmp expected actual
-# '
-
 test_expect_success 'git unify init again fails' '
     ( cd repo/project-bar-2 &&
       test_must_fail git unify init )
 '
 
 test_expect_success 'git unify submodule-update - fresh' '
-    ( cd repo/project-foo
+    ( cd repo/project-foo &&
       git unify submodule-update module-a )
 '
 
 test_expect_success 'git unify submodule-update' '
-    ( cd repo/project-foo-2
+    ( cd repo/project-foo-2 &&
       git unify submodule-update module-a )
 '
 
 test_expect_success 'git unify submodule-add - fresh' '
-    ( cd repo/project-foo
-      git unify submodule-add ../../orig/module-b)
+    ( cd repo/project-foo &&
+      git checkout -b with-module-b &&
+      git unify submodule-add ../../orig/module-b &&
+      git commit -m "added module-b" &&
+      git push origin with-module-b )
 '
 
 test_expect_success 'git unify submodule-add' '
-    ( cd repo/project-bar
-      git unify submodule-add ../../orig/module-b)
+    ( cd repo/project-bar &&
+      git checkout -b with-module-b &&
+      git unify submodule-add ../../orig/module-b &&
+      git commit -m "added module-b" &&
+      git push origin with-module-b )
 '
 
-test_expect_success 'conflicting branches' '
+test_expect_success 'setting up conflicting branches' '
     ( cd repo/project-foo-2 &&
       git checkout -b branch-conflicting &&
       git push origin branch-conflicting ) &&
     ( git clone orig/project-foo repo/project-foo-3 &&
       cd repo/project-foo-3 &&
       git checkout branch-conflicting &&
-      __git_commit_random ) &&
+      __git_commit ) &&
     ( cd repo/project-foo-2 &&
       git checkout branch-conflicting &&
-      __git_commit_random &&
-      git push origin branch-conflicting ) &&
+      __git_commit &&
+      git push origin branch-conflicting )
+'
+
+### Branch conflicting
+
+test_expect_success 'git unify init with branches conflicted must fail' '
     ( cd repo/project-foo-3 &&
       test_must_fail git unify init )
+'
+
+test_expect_success 'manually fix it (fetch; fails)' '
+    ( cd repo/project-foo-3 &&
+      test_must_fail git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/* | tee fetch-result)
+'
+
+test_expect_success 'manually fix it (merge conflicting branch)' '
+    ( cd repo/project-foo-3 &&
+      git checkout branch-conflicting &&
+      git pull --rebase "$(git unify shared-dir)" branch-conflicting &&
+      git push "$(git unify shared-dir)" branch-conflicting &&
+      git checkout master )
+'
+
+test_expect_success 'then git unify init succeeds' '
+    ( cd repo/project-foo-3 &&
+      git unify init )
 '
 
 # enabling `./t/setup.sh`
