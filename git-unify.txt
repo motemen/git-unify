@@ -1,0 +1,71 @@
+git-unify(1)
+===========
+
+NAME
+----
+
+git-unify - Share .git directory among local repositories of same origin
+
+SYNOPSIS
+--------
+[verse]
+'git unify' init
+'git unify' deinit
+'git unify' clone <repository> [<path>]
+'git unify' submodule-add <repository> [<path>]
+'git unify' submodule-update [<path>]
+
+DESCRIPTION
+-----------
+
+Shares files under .git directory among local repositories to squeeze disk
+usage and/or speed up clone speed. Especially useful for example if you
+have many repositories that uses same submodules.
+
+COMMANDS
+--------
+init::
+	Share files (eg. refs, objects) of repository's .git directory under
+	"$HOME/.shared-git" (by default) so that other local clones of the
+	same origin can use shared files there. The files are moved to central
+	and symlink to them are placed under local .git directory.
++
+If shared .git directory is already set up and two repositories' head refs
+does not meet, (eg. one repository has a new branch) this command fails.
+If so, you should sync these manually.
++
+Typically fixing goes like below:
++
+------------
+$ git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/* # will fail on some branches
+$ git checkout the-branch-conflicting
+$ git pull "$(git unify shared-dir)" the-branch-conflicting
+$ git push "$(git unify shared-dir)" the-branch-conflicting
+------------
+
+deinit::
+	Reverts the effect of 'git unify init'. Files under .git directoy are
+	no longer shared (not symlinked).
+
+clone::
+	Does 'git clone' with shared .git directory used/set up. If the remote
+        repository is already shared ('git unify init' is done somewhere),
+        it does not fetches remote directory but instead clones from the
+        shared .git directory.
+
+submodule-add::
+	Does 'git submodule add' with shared .git directory used/set up.
+
+submodule-update::
+	Does 'git submodule update --init' with shared .git directory used/set up.
+
+SHARING .git DIRECTORIES
+------------------------
+
+git-unify shares .git/refs, so local repositories of same origin that are
+unified shares their branches. Branch updating at one working directory would
+affect the other.
+
+AUTHOR
+------
+Written by motemen <motemen@gmail.com>
