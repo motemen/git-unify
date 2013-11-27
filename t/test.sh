@@ -47,11 +47,11 @@ done
 
 # done initializing
 
-test_expect_success 'git-unify clone - fresh' '
+test_expect_success 'git unify clone - fresh' '
     git unify clone orig/project-foo repo/project-foo
 '
 
-test_expect_success 'git-unify clone - already unified' '
+test_expect_success 'git unify clone - already unified' '
     git unify clone orig/project-foo repo/project-foo-2
 '
 
@@ -143,7 +143,7 @@ test_expect_success 'manually fix it (fetch; fails)' '
 test_expect_success 'manually fix it (merge conflicting branch)' '
     ( cd repo/project-foo-3 &&
       git checkout branch-conflicting &&
-      git pull --rebase "$(git unify shared-dir)" branch-conflicting &&
+      git pull "$(git unify shared-dir)" branch-conflicting &&
       git push "$(git unify shared-dir)" branch-conflicting &&
       git checkout master )
 '
