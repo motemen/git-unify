@@ -9,6 +9,7 @@ USAGE="init
    or: $dashless submodule-add <repo>
    or: $dashless clone <repo>"
 SUBDIRECTORY_OK=yes
+NONGIT_OK=yes
 
 . git-sh-setup
 
@@ -31,7 +32,7 @@ __remote_url_to_dir () {
 
 # Unify current non-unified git-dir
 cmd_init () {
-    local_git_dir=$(git rev-parse --git-dir)
+    local_git_dir=$(git rev-parse --git-dir) || exit
 
     if [ -L "$local_git_dir/config" ]
     then
@@ -103,6 +104,8 @@ cmd_init () {
 }
 
 cmd_submodule_add () {
+    cd_to_toplevel
+
     remote_url=$1
     submodule_name=${2-$(basename ${remote_url%.git})}
 
@@ -121,6 +124,8 @@ cmd_submodule_add () {
 }
 
 cmd_submodule_update () {
+    cd_to_toplevel
+
     submodule_name=${1%/} # TODO when not specified
 
     test -n "$submodule_name"
@@ -161,7 +166,7 @@ cmd_clone () {
 }
 
 cmd_deinit () {
-    local_git_dir=$(git rev-parse --git-dir)
+    local_git_dir=$(git rev-parse --git-dir) || exit
 
     if [ ! -L "$local_git_dir/config" ]
     then
