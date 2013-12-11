@@ -41,7 +41,7 @@ for repo in project-foo project-bar module-a module-b; do
 done
 
 ( cd tmp/project-foo
-  git submodule add ../../orig/module-a
+  git submodule add "$PWD/../../orig/module-a"
   git commit -m 'added module-a'
   git push origin master ) >&3 2>&4
 
@@ -101,7 +101,7 @@ test_expect_success 'git unify submodule-update' '
 test_expect_success 'git unify submodule-add - fresh' '
     ( cd repo/project-foo &&
       git checkout -b with-module-b &&
-      git unify submodule-add ../../orig/module-b &&
+      git unify submodule-add "$PWD/../../orig/module-b" &&
       git commit -m "added module-b" &&
       git push origin with-module-b )
 '
@@ -109,7 +109,7 @@ test_expect_success 'git unify submodule-add - fresh' '
 test_expect_success 'git unify submodule-add' '
     ( cd repo/project-bar &&
       git checkout -b with-module-b &&
-      git unify submodule-add ../../orig/module-b &&
+      git unify submodule-add "$PWD/../../orig/module-b" &&
       git commit -m "added module-b" &&
       git push origin with-module-b )
 '

@@ -20,7 +20,14 @@ then
 fi
 
 __remote_url_to_dir () {
-    dir=$1
+    url=$1
+
+    case "$url" in
+    ./*|../*)
+        die "Cannot unify relative repository URL: $url"
+    esac
+
+    dir=$url
     dir=${dir#*@}
     dir=${dir#*://}
     dir=${dir%.git}
@@ -58,8 +65,8 @@ cmd_init () {
         then
             rm $heads_shared $heads_local
             die 'fatal: Heads are not synced. Please sync manually branches and try again.
-	Typically running `git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/*`
-	and pull/pushing conflicting branch will fix.'
+    Typically running `git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/*`
+    and pull/pushing conflicting branch will fix.'
         fi
 
         rm $heads_shared $heads_local
