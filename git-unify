@@ -133,7 +133,24 @@ cmd_submodule_add () {
 cmd_submodule_update () {
     cd_to_toplevel
 
-    submodule_name=${1%/} # TODO when not specified
+    if [ $# -ge 1 ]; then
+        submodule_update_target "$@"
+    else
+        # XXX use `-z`
+        git ls-files --stage | while read mode sha1 stage path
+        do
+            if [ "$mode" == "160000" ]
+            then
+                submodule_update_target "$path" || true
+            fi
+        done
+    fi
+}
+
+submodule_update_target () {
+    cd_to_toplevel
+
+    submodule_name=${1%/}
 
     test -n "$submodule_name"
 
