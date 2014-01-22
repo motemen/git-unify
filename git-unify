@@ -36,8 +36,8 @@ __remote_url_to_dir () {
     dir=${dir#*@}
     dir=${dir#*://}
     dir=${dir%.git}
-    dir=${dir/:/\/}
-    dir=${dir/\/\//\/}
+    dir=$(printf '%s\n' "$dir" | sed -e 's/:/\//g')
+    dir=$(printf '%s\n' "$dir" | sed -e 's/\/\//\//g')
     dir=${dir#/}
     echo "$root/$dir"
 }
@@ -144,7 +144,7 @@ cmd_submodule_update () {
         # XXX use `-z`
         git ls-files --stage | while read mode sha1 stage path
         do
-            if [ "$mode" == "160000" ]
+            if [ "$mode" = "160000" ]
             then
                 submodule_update_target "$path" || true
             fi
@@ -271,4 +271,4 @@ then
     usage
 fi
 
-"cmd_${command//-/_}" "$@"
+"cmd_$(printf '%s\n' "$command" | sed -e 's/-/_/g')" "$@"
