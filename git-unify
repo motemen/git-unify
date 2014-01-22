@@ -11,6 +11,11 @@ USAGE="init
 SUBDIRECTORY_OK=yes
 NONGIT_OK=yes
 
+if ! type git-sh-setup > /dev/null 2>&1
+then
+    PATH="$(git --exec-path):$PATH"
+fi
+
 . git-sh-setup
 
 root=${GIT_UNIFY_ROOT-$(git config unify.root || true)}
