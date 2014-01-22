@@ -59,7 +59,11 @@ cmd_init () {
 
     if [ -d "$shared_git_dir" ]
     then
-        say "Shared git-dir exists. Comparing heads..."
+        say "Shared git-dir exists. Updating..."
+
+        git --git-dir="$shared_git_dir" fetch --update-head-ok origin 'refs/heads/*:refs/heads/*'
+
+        say "Comparing heads..."
 
         # Syncing two repositories automatically is a hard job, so we don't try on it
         heads_shared="${TMPDIR-/tmp}/git-unify.$$.heads-shared"
