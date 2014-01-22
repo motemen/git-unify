@@ -137,7 +137,7 @@ test_expect_success 'git unify init with branches conflicted must fail' '
 
 test_expect_success 'manually fix it (fetch; fails)' '
     ( cd repo/project-foo-3 &&
-      test_must_fail git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/* | tee fetch-result)
+      test_must_fail git fetch --update-head-ok "$(git unify shared-dir)" "refs/heads/*:refs/heads/*" | tee fetch-result)
 '
 
 test_expect_success 'manually fix it (merge conflicting branch)' '
@@ -145,6 +145,7 @@ test_expect_success 'manually fix it (merge conflicting branch)' '
       git checkout branch-conflicting &&
       git pull "$(git unify shared-dir)" branch-conflicting &&
       git push "$(git unify shared-dir)" branch-conflicting &&
+      git push origin branch-conflicting &&
       git checkout master )
 '
 
