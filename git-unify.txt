@@ -14,6 +14,7 @@ SYNOPSIS
 'git unify' clone <repository> [<path>]
 'git unify' submodule-add <repository> [<path>]
 'git unify' submodule-update [<path>]
+'git unify' shared-dir [--verify]
 
 DESCRIPTION
 -----------
@@ -58,6 +59,10 @@ submodule-add::
 
 submodule-update::
 	Does 'git submodule update --init' with shared .git directory used/set up.
+
+shared-dir::
+	Prints shared .git directory for current repository. Exits with non-zero code if '--verify'
+	is specified and the directory does not exist.
 
 SHARING .git DIRECTORIES
 ------------------------
