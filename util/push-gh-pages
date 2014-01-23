@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -e
+set -x
+
+remote=$(git config remote.origin.url)
+
+cd "$1"
+
+cdup=$(git rev-parse --show-cdup)
+if [ "$cdup" != '' ]
+then
+    git init
+    git remote add --fetch origin "$remote"
+fi
+
+git checkout gh-pages || git checkout --orphan gh-pages
+
+git add .
+git commit --allow-empty-message
+git push origin gh-pages

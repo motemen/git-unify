@@ -10,3 +10,12 @@ test-checkbashisms:
 
 submodule-update:
 	git submodule update --init
+
+gh-pages: gh-pages-docs
+	./util/push-gh-pages ./gh-pages
+
+gh-pages-docs:
+	mkdir -p gh-pages
+	cat git-unify.txt | asciidoc - > gh-pages/git-unify.html
+
+.PHONY: gh-pages
