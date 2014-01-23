@@ -43,6 +43,12 @@ __remote_url_to_dir () {
     echo "$root/$dir"
 }
 
+__update_shared_git_directory () {
+    shared_git_dir="$1"
+    say "Updating shared .git directory..."
+    git --git-dir="$shared_git_dir" fetch --update-head-ok origin 'refs/heads/*:refs/heads/*'
+}
+
 # Unify current non-unified git-dir
 cmd_init () {
     local_git_dir=$(git rev-parse --git-dir) || exit
@@ -59,27 +65,30 @@ cmd_init () {
 
     if [ -d "$shared_git_dir" ]
     then
-        say "Shared git-dir exists. Updating..."
+        say "Shared git-dir exists"
 
-        git --git-dir="$shared_git_dir" fetch --update-head-ok origin 'refs/heads/*:refs/heads/*'
+        __update_shared_git_directory "$shared_git_dir"
 
-        say "Comparing heads..."
+        # shared -> local
+        git fetch --update-head-ok "$shared_git_dir" 'refs/heads/*:refs/heads/*'
 
-        # Syncing two repositories automatically is a hard job, so we don't try on it
-        heads_shared="${TMPDIR-/tmp}/git-unify.$$.heads-shared"
-        heads_local="${TMPDIR-/tmp}/git-unify.$$.heads-local"
-
-        if ! ( git ls-remote --heads "$shared_git_dir" >"$heads_shared";
-               git ls-remote --heads . >"$heads_local";
-               diff -u "$heads_shared" "$heads_local" )
-        then
-            rm $heads_shared $heads_local
-            die 'fatal: Heads are not synced. Please sync manually branches and try again.
-    Typically running `git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/*`
-    and pull/pushing conflicting branch will fix.'
-        fi
-
-        rm $heads_shared $heads_local
+#       say "Comparing heads..."
+#
+#       # Syncing two repositories automatically is a hard job, so we don't try on it
+#       heads_shared="${TMPDIR-/tmp}/git-unify.$$.heads-shared"
+#       heads_local="${TMPDIR-/tmp}/git-unify.$$.heads-local"
+#
+#       if ! ( git ls-remote --heads "$shared_git_dir" >"$heads_shared";
+#              git ls-remote --heads . >"$heads_local";
+#              diff -u "$heads_shared" "$heads_local" )
+#       then
+#           rm $heads_shared $heads_local
+#           die 'fatal: Heads are not synced. Please sync manually branches and try again.
+#   Typically running `git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/*`
+#   and pull/pushing conflicting branch will fix.'
+#       fi
+#
+#       rm $heads_shared $heads_local
 
         say "Removing files under $local_git_dir and replacing with symlinks to $shared_git_dir..."
 
@@ -131,6 +140,8 @@ cmd_submodule_add () {
     if [ -d "$shared_git_dir" ]
     then
         say "Shared git-dir for <$remote_url> exists"
+
+        __update_shared_git_directory "$shared_git_dir"
 
         git submodule add --reference "$shared_git_dir" "$remote_url" "$submodule_name"
     else
