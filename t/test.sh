@@ -142,10 +142,9 @@ test_expect_success 'manually fix it (fetch; fails)' '
 
 test_expect_success 'manually fix it (merge conflicting branch)' '
     ( cd repo/project-foo-3 &&
-      git checkout branch-conflicting &&
-      git pull "$(git unify shared-dir)" branch-conflicting &&
-      git push "$(git unify shared-dir)" branch-conflicting &&
+      git pull origin branch-conflicting &&
       git push origin branch-conflicting &&
+      git unify update-shared-branch branch-conflicting &&
       git checkout master )
 '
 
