@@ -45,8 +45,10 @@ __remote_url_to_dir () {
 
 __update_shared_git_directory () {
     shared_git_dir="$1"
+
     say "Updating shared .git directory..."
-    git --git-dir="$shared_git_dir" fetch --update-head-ok origin 'refs/heads/*:refs/heads/*'
+
+    git --git-dir="$shared_git_dir" remote update
 }
 
 # Unify current non-unified git-dir
@@ -70,25 +72,14 @@ cmd_init () {
         __update_shared_git_directory "$shared_git_dir"
 
         # shared -> local
-        git fetch --update-head-ok "$shared_git_dir" 'refs/heads/*:refs/heads/*'
+        say "Updating local refs using shared .git directory..."
 
-#       say "Comparing heads..."
-#
-#       # Syncing two repositories automatically is a hard job, so we don't try on it
-#       heads_shared="${TMPDIR-/tmp}/git-unify.$$.heads-shared"
-#       heads_local="${TMPDIR-/tmp}/git-unify.$$.heads-local"
-#
-#       if ! ( git ls-remote --heads "$shared_git_dir" >"$heads_shared";
-#              git ls-remote --heads . >"$heads_local";
-#              diff -u "$heads_shared" "$heads_local" )
-#       then
-#           rm $heads_shared $heads_local
-#           die 'fatal: Heads are not synced. Please sync manually branches and try again.
-#   Typically running `git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/*`
-#   and pull/pushing conflicting branch will fix.'
-#       fi
-#
-#       rm $heads_shared $heads_local
+        if ! git fetch --update-head-ok "$shared_git_dir" 'refs/heads/*:refs/heads/*'
+        then
+            die 'fatal: Branches in shared .git directory are not fast-forward of local branches
+(Maybe not up-to-date). Run command below to force-update those branches:
+    git unify update-shared-branch BRANCH'
+        fi
 
         say "Removing files under $local_git_dir and replacing with symlinks to $shared_git_dir..."
 
@@ -127,6 +118,16 @@ cmd_init () {
             GIT_DIR="$shared_git_dir" __split_config_entries core.bare core.worktree
         )
     fi
+}
+
+cmd_update_shared_branch () {
+    branch=$1
+    test -n "$branch"
+
+    remote_url=$(git config remote.origin.url || die 'fatal: remote.origin.url not set')
+    shared_git_dir=$(__remote_url_to_dir "$remote_url")
+
+    git --git-dir="$shared_git_dir" fetch --update-head-ok origin "$branch:$branch"
 }
 
 cmd_submodule_add () {
@@ -286,7 +287,7 @@ __split_config_entries () {
 while test $# != 0 && test -z "$command"
 do
     case "$1" in
-        init | deinit | clone | submodule-update | submodule-add | shared-dir )
+        init | deinit | clone | submodule-update | submodule-add | shared-dir | update-shared-branch )
             command=$1
             ;;
         --)

@@ -31,17 +31,14 @@ init::
 	same origin can use shared files there. The files are moved to central
 	and symlink to them are placed under local .git directory.
 +
-If shared .git directory is already set up and two repositories' head refs
-does not meet, (eg. one repository has a new branch) this command fails.
-If so, you should sync these manually.
-+
-Typically fixing goes like below:
+If shared .git directory is already set up and the shared refs are not
+fast-forward of local refs, this command will fail. If so, push your local
+changes to remote (if any), and run command below to make shared refs
+up-to-date.
 +
 ------------
-$ git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/* # will fail on some branches
-$ git checkout the-branch-conflicting
-$ git pull "$(git unify shared-dir)" the-branch-conflicting
-$ git push "$(git unify shared-dir)" the-branch-conflicting
+$ git push origin the-branch
+$ git unify update-shared-branch the-branch
 ------------
 
 deinit::
