@@ -778,16 +778,14 @@ init
         same origin can use shared files there. The files are moved to central
         and symlink to them are placed under local .git directory.
 </p>
-<div class="paragraph"><p>If shared .git directory is already set up and two repositories' head refs
-does not meet, (eg. one repository has a new branch) this command fails.
-If so, you should sync these manually.</p></div>
-<div class="paragraph"><p>Typically fixing goes like below:</p></div>
+<div class="paragraph"><p>If shared .git directory is already set up and the shared refs are not
+fast-forward of local refs, this command will fail. If so, push your local
+changes to remote (if any), and run command below to make shared refs
+up-to-date.</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>$ git fetch --update-head-ok "$(git unify shared-dir)" refs/heads/*:refs/heads/* # will fail on some branches
-$ git checkout the-branch-conflicting
-$ git pull "$(git unify shared-dir)" the-branch-conflicting
-$ git push "$(git unify shared-dir)" the-branch-conflicting</code></pre>
+<pre><code>$ git push origin the-branch
+$ git unify update-shared-branch the-branch</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -856,7 +854,7 @@ affect the other.</p></div>
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2014-01-23 13:29:02 JST
+Last updated 2014-01-24 19:58:34 JST
 </div>
 </div>
 </body>
